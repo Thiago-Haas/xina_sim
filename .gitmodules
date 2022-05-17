@@ -1,0 +1,3 @@
+[submodule "xina"]
+	path = xina
+	url = https://github.com/xarc/xina.git
