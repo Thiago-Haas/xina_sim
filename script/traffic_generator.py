@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import sys
 
 x_range=4#for testing purposes network was locked at 4x4
+data_width=8
 
 def binary_array_generator(binary_array):
 
@@ -57,12 +58,18 @@ def datapath_selection(binary_array,datapath_binary_array):
 def format_datapath(binary_array,datapath_binary_array):
     datapath_binary_array_X=[]
     datapath_binary_array_Y=[]
-    
-    for i in range(x_range*x_range):#String work to set desired header format
-            temp=int((len(binary_array[i]))/2)
-            datapath_binary_array_X.append(datapath_binary_array[i][:temp])
-            datapath_binary_array_Y.append(datapath_binary_array[i][temp:])
-            datapath_binary_array[i]=datapath_binary_array_X[i].zfill(16)+datapath_binary_array_Y[i].zfill(16)
+    if(data_width==32):
+        for i in range(x_range*x_range):#String work to set desired header format
+                temp=int((len(binary_array[i]))/2)
+                datapath_binary_array_X.append(datapath_binary_array[i][:temp])
+                datapath_binary_array_Y.append(datapath_binary_array[i][temp:])
+                datapath_binary_array[i]=datapath_binary_array_X[i].zfill(16)+datapath_binary_array_Y[i].zfill(16)
+    elif(data_width==8):
+        for i in range(x_range*x_range):#String work to set desired header format
+                temp=int((len(binary_array[i]))/2)
+                datapath_binary_array_X.append(datapath_binary_array[i][:temp])
+                datapath_binary_array_Y.append(datapath_binary_array[i][temp:])
+                datapath_binary_array[i]=datapath_binary_array_X[i].zfill(4)+datapath_binary_array_Y[i].zfill(4)
 
 def router_indexes(router_x,router_y):
     for i in range(x_range):#generates routers indexes
@@ -73,32 +80,60 @@ def router_indexes(router_x,router_y):
 def seed_generator(bSeed,sbSeed,router_x,router_y):
     seedx=[]
     seedy=[]
-    for i in range(x_range**2):#seed generator
-        seedx.append(abs((x_range*((router_x[i]*x_range)+router_y[i]))+(2**((router_x[i])+8))))
-        seedx[i]=bin(seedx[i])[2:].zfill(16)
+    if(data_width==32):
+        for i in range(x_range**2):#seed generator
+            seedx.append(abs((x_range*((router_x[i]*x_range)+router_y[i]))+(2**((router_x[i])+8))))
+            seedx[i]=bin(seedx[i])[2:].zfill(16)
 
-        seedy.append(abs((x_range*((router_y[i]*x_range)+router_x[i]))+(2**((router_y[i])+8))))
-        seedy[i]=bin(seedy[i])[2:].zfill(16)
+            seedy.append(abs((x_range*((router_y[i]*x_range)+router_x[i]))+(2**((router_y[i])+8))))
+            seedy[i]=bin(seedy[i])[2:].zfill(16)
 
-        bSeed.append(seedx[i]+seedy[i])
+            bSeed.append(seedx[i]+seedy[i])
 
-        sbSeed.append(seedx[i]+seedy[i])
+            sbSeed.append(seedx[i]+seedy[i])
+    elif(data_width==8):
+        for i in range(x_range**2):#seed generator
+            seedx.append(abs(x_range*router_x[i]+router_x[i]+x_range))
+            seedx[i]=(bin(seedx[i])[2:].zfill(4))[-4:]
+            
+            seedy.append(abs(x_range*router_y[i]+router_y[i]+x_range))
+            seedy[i]=(bin(seedy[i])[2:].zfill(4))[-4:]
+
+            bSeed.append(seedx[i]+seedy[i])
+            print(bSeed[i])
+
+            sbSeed.append((seedx[i]+seedy[i]))
 
 def LFSR(x):
     result=[]
-    for i in range(x_range**2):#XOR
-        
-        xor=((ord(x[i][0])^ord(x[i][10]))^ord(x[i][30]))^ord(x[i][31])
-        xor=str(xor)
-        
-        x[i]=x[i][1:]+x[i][:1]#1 bit left rotation
+    if(data_width==32):
+        for i in range(x_range**2):#XOR
 
-        temp=list(x[i])#Inserts XOR result at the rightmost bit
-        temp[-1]=xor
-        temp="".join(temp)
-        x[i]=temp
+            xor=((ord(x[i][0])^ord(x[i][10]))^ord(x[i][30]))^ord(x[i][31])
+            xor=str(xor)
 
-        result.append(x[i])
+            x[i]=x[i][1:]+x[i][:1]#1 bit left rotation
+
+            temp=list(x[i])#Inserts XOR result at the rightmost bit
+            temp[-1]=xor
+            temp="".join(temp)
+            x[i]=temp
+
+            result.append(x[i])
+    elif(data_width==8):
+        for i in range(x_range**2):#XOR
+            xor=ord(x[i][0])^ord(x[i][2])^ord(x[i][3])^ord(x[i][4])
+            xor=str(xor)
+
+            x[i]=x[i][1:]+x[i][:1]#1 bit left rotation
+
+            temp=list(x[i])#Inserts XOR result at the rightmost bit
+            temp[-1]=xor
+            temp="".join(temp)
+            x[i]=temp
+
+            result.append(x[i])
+
     return result
 
 def LFSR_call(bSeed,sbSeed,LFSR_result,n_packets,n_flits):
