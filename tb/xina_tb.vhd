@@ -30,16 +30,16 @@ entity xina_tb is
     rows_p : positive := 4;
     cols_p : positive := 4;
     -- input and output flow regulation mode
-    flow_mode_p : natural := 1; -- 0 for HS Moore, 1 for HS Mealy
+    flow_mode_p : natural := 0; -- 0 for HS Moore, 1 for HS Mealy
     -- routing mode
-    routing_mode_p : natural := 1; -- 0 for XY Moore, 1 for XY Mealy
+    routing_mode_p : natural := 0; -- 0 for XY Moore, 1 for XY Mealy
     -- arbitration mode
-    arbitration_mode_p : natural := 1; -- 0 for RR Moore, 1 for RR Mealy
+    arbitration_mode_p : natural := 0; -- 0 for RR Moore, 1 for RR Mealy
     -- input buffer mode and depth
     buffer_mode_p  : natural  := 0; -- 0 for FIFO Ring, 1 for FIFO Shift
     buffer_depth_p : positive := 4;
     -- network data width
-    data_width_p : positive := 32
+    data_width_p : positive := 8
       );
 end xina_tb;
 
@@ -52,7 +52,7 @@ use ieee.std_logic_textio.all;
 
 architecture Behavioral of xina_tb is
 
-constant n_packets : integer := 2048; --number of messages that will be used on the testebench
+constant n_packets : integer := 10; --number of messages that will be used on the testebench
 constant n_flits :  integer := 4; --number of flits that each packet has
 
 constant period_c : time := 10 ns;
@@ -127,10 +127,10 @@ rst_i <= '1', '0' after period_c;
 --Entry generation
 col_entry : for x in cols_c-1 downto 0 generate
     row_entry : for y in rows_c-1 downto 0 generate
-        process
-            file txt_reader : text open read_mode is ("/home/haas/Documents/GitHub/xina/input_files_tb/tb_input_router_"&integer'image(X)&integer'image(Y)&".txt");--
+        process 
+            file txt_reader : text open read_mode is ("/home/haas/Documents/github/xina_sim/input_files_tb/tb_input_router_"&integer'image(X)&integer'image(Y)&".txt");--
             variable v_iline : line;
-            variable temporary_read_value : std_logic_vector(32 downto 0);
+            variable temporary_read_value : std_logic_vector(8 downto 0);
             variable counter : integer := 0;
             begin
                 for I in (n_packets*n_flits-1) downto 0 loop   
@@ -141,7 +141,7 @@ col_entry : for x in cols_c-1 downto 0 generate
                         l_in_data_i(X,Y)<= temporary_read_value;
                         counter:=counter+1; 
                     else
-                        l_in_data_i(X,Y)<="000000000000000000000000000000000";
+                        l_in_data_i(X,Y)<="000000000";
                     end if;
                     if(flow_mode_p=0) then--If flow mode is Moore it does another wait period
                         wait for period_c;
@@ -164,7 +164,7 @@ col_exit : for x in cols_c-1 downto 0 generate
             variable v_oline:line;
             variable counter : integer := 0;
             variable v_TIME : time := 0 ns;
-            file log_writer : text open write_mode is ("/home/haas/Documents/GitHub/xina/log_tb/tb_router_"&integer'image(X)&integer'image(Y)&".log");
+            file log_writer : text open write_mode is ("/home/haas/Documents/github/xina_sim/log_tb/tb_router_"&integer'image(X)&integer'image(Y)&".log");
             begin
                 l_out_ack_i(X,Y) <= '0';
                 wait until l_out_val_o(X,Y) = '1';
